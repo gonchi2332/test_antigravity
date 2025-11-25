@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  --color-mineral-green: #0D4D4D;
+  --color-mineral-green-light: #1A6666;
+  --color-mineral-green-dark: #083333;
+  --font-sans: Inter, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply antialiased text-gray-900 bg-white;
+  }
+}
