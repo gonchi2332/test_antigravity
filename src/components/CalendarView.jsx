@@ -18,7 +18,7 @@ export default function CalendarView({ refreshTrigger, selectedEmployeeId }) {
                 // If selectedEmployeeId is provided, fetch appointments for that specialist
                 // Otherwise, fetch all appointments (for employees, this will be filtered by backend)
                 const data = await appointmentService.getAppointments(selectedEmployeeId);
-                const approved = (data.appointments || []).filter(app => app.status === 'approved');
+                        const approved = (data.appointments || []).filter(app => app.status?.name === 'approved');
                 setAppointments(approved);
             } catch (err) {
                 console.error(err);

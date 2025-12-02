@@ -58,17 +58,39 @@ async function seedEmployees() {
             const userId = authData.user.id;
             console.log(`Created auth user: ${emp.email} (${userId})`);
 
-            // 2. Update Profile (Trigger might have created it, but we need to set role/specialty)
-            // Wait a bit for trigger? Or just upsert.
+            // 2. Get role_id for employee role
+            const { data: roleData, error: roleError } = await supabase
+                .from('roles')
+                .select('id')
+                .eq('name', emp.role)
+                .single();
 
+            if (roleError) {
+                console.error(`Error fetching role for ${emp.email}:`, roleError.message);
+                continue;
+            }
+
+            // 3. Get specialty_id for specialty
+            const { data: specialtyData, error: specialtyError } = await supabase
+                .from('specialties')
+                .select('id')
+                .eq('name', emp.specialty)
+                .single();
+
+            if (specialtyError) {
+                console.error(`Error fetching specialty for ${emp.email}:`, specialtyError.message);
+                continue;
+            }
+
+            // 4. Update Profile (Trigger might have created it, but we need to set role_id/specialty_id)
             const { error: profileError } = await supabase
                 .from('profiles')
                 .upsert({
                     id: userId,
                     email: emp.email,
                     full_name: emp.full_name,
-                    role: emp.role,
-                    specialty: emp.specialty,
+                    role_id: roleData.id,
+                    specialty_id: specialtyData.id,
                     updated_at: new Date()
                 });
 

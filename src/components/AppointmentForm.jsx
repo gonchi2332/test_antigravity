@@ -9,16 +9,18 @@ export default function AppointmentForm({ onSuccess, onSpecialistChange }) {
     const [error, setError] = useState(null);
     const [listItems, setListItems] = useState([]); // Customers
     const [companies, setCompanies] = useState([]); // Companies
+    const [tiposConsulta, setTiposConsulta] = useState([]); // Tipos de consulta
+    const [modalidades, setModalidades] = useState([]); // Modalidades
     const [isEmployee, setIsEmployee] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState('');
     const [loadingData, setLoadingData] = useState(true);
     const [loadingCustomers, setLoadingCustomers] = useState(false);
     const [formData, setFormData] = useState({
         empresa: '',
-        tipo_consulta: 'General',
+        tipo_consulta_id: '',
         descripcion: '',
         fecha_consulta: '',
-        modalidad: 'Virtual',
+        modalidad_id: '',
         direccion: '',
         duracion_consulta: '60', // Default 1 hour in minutes
         selected_id: '' // user_id for employees
@@ -29,6 +31,26 @@ export default function AppointmentForm({ onSuccess, onSpecialistChange }) {
             if (!user) return;
             setLoadingData(true);
             try {
+                // Load tipos consulta and modalidades
+                const [tiposData, modalidadesData] = await Promise.all([
+                    appointmentService.getTiposConsulta(),
+                    appointmentService.getModalidades()
+                ]);
+                
+                setTiposConsulta(tiposData || []);
+                setModalidades(modalidadesData || []);
+
+                // Set default values
+                if (tiposData && tiposData.length > 0) {
+                    const generalTipo = tiposData.find(t => t.name === 'General') || tiposData[0];
+                    setFormData(prev => ({ ...prev, tipo_consulta_id: generalTipo.id }));
+                }
+                
+                if (modalidadesData && modalidadesData.length > 0) {
+                    const virtualModalidad = modalidadesData.find(m => m.name === 'Virtual') || modalidadesData[0];
+                    setFormData(prev => ({ ...prev, modalidad_id: virtualModalidad.id }));
+                }
+
                 // Use getAppointments to get isEmployee flag
                 const appointmentsData = await appointmentService.getAppointments();
                 const amIEmployee = appointmentsData.isEmployee || false;
@@ -107,9 +129,24 @@ export default function AppointmentForm({ onSuccess, onSpecialistChange }) {
     // Generate time slots in 15-minute intervals
     const generateTimeSlots = () => {
         const slots = [];
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const selectedDate = dateValue ? new Date(dateValue) : null;
+        const isToday = selectedDate && selectedDate.getTime() === today.getTime();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        const currentTimeMinutes = currentHour * 60 + currentMinute;
+
         for (let hour = 0; hour < 24; hour++) {
             for (let minute = 0; minute < 60; minute += 15) {
                 const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                const timeMinutes = hour * 60 + minute;
+                
+                // If it's today, only show future time slots (with 15 min buffer)
+                if (isToday && timeMinutes <= currentTimeMinutes + 15) {
+                    continue;
+                }
+                
                 slots.push(timeStr);
             }
         }
@@ -128,7 +165,7 @@ export default function AppointmentForm({ onSuccess, onSpecialistChange }) {
 
     const handleTimeChange = (e) => {
         if (!dateValue) {
-            alert('Please select a date first before choosing a time.');
+            setError('Please select a date first before choosing a time.');
             return;
         }
         const newTimeValue = e.target.value;
@@ -155,20 +192,26 @@ export default function AppointmentForm({ onSuccess, onSpecialistChange }) {
             delete payload.selected_id;
 
             await appointmentService.createAppointment(payload);
+            // Reset form but keep default tipo_consulta_id and modalidad_id
+            const generalTipo = tiposConsulta.find(t => t.name === 'General') || tiposConsulta[0];
+            const virtualModalidad = modalidades.find(m => m.name === 'Virtual') || modalidades[0];
+            
             setFormData(prev => ({
                 ...prev,
                 empresa: selectedCompany || '',
-                tipo_consulta: 'General',
+                tipo_consulta_id: generalTipo?.id || '',
                 descripcion: '',
                 fecha_consulta: '',
-                modalidad: 'Virtual',
+                modalidad_id: virtualModalidad?.id || '',
                 direccion: '',
                 duracion_consulta: '60'
             }));
             if (onSuccess) onSuccess();
         } catch (err) {
-            console.error(err);
-            setError(err.message || 'Failed to schedule appointment. Please try again.');
+            console.error('Appointment creation error:', err);
+            // Extract user-friendly error message
+            const errorMessage = err?.error?.error || err?.message || 'Failed to schedule appointment. Please try again.';
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -310,7 +353,7 @@ export default function AppointmentForm({ onSuccess, onSpecialistChange }) {
                                             ) : (
                                                 listItems.map(item => (
                                                     <option key={item.id} value={item.id}>
-                                                        {item.full_name} - {item.specialty}
+                                                        {item.full_name} - {item.specialty?.name || 'No specialty'}
                                                     </option>
                                                 ))
                                             )}
@@ -328,16 +371,21 @@ export default function AppointmentForm({ onSuccess, onSpecialistChange }) {
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                                     <Activity className="w-5 h-5" />
                                 </div>
-                                <select
-                                    value={formData.tipo_consulta}
-                                    onChange={(e) => setFormData({ ...formData, tipo_consulta: e.target.value })}
-                                    className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-mineral-green/20 focus:border-mineral-green transition-colors outline-none bg-white appearance-none"
-                                >
-                                    <option>General</option>
-                                    <option>Technical</option>
-                                    <option>Sales</option>
-                                    <option>Support</option>
-                                </select>
+                                {loadingData ? (
+                                    <div className="w-full h-10 bg-gray-200 rounded-xl animate-pulse"></div>
+                                ) : (
+                                    <select
+                                        required
+                                        value={formData.tipo_consulta_id}
+                                        onChange={(e) => setFormData({ ...formData, tipo_consulta_id: e.target.value })}
+                                        className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-mineral-green/20 focus:border-mineral-green transition-colors outline-none bg-white appearance-none"
+                                    >
+                                        <option value="">Select type</option>
+                                        {tiposConsulta.map(tipo => (
+                                            <option key={tipo.id} value={tipo.id}>{tipo.name}</option>
+                                        ))}
+                                    </select>
+                                )}
                             </div>
                         </div>
 
@@ -349,14 +397,21 @@ export default function AppointmentForm({ onSuccess, onSpecialistChange }) {
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                                     <MapPin className="w-5 h-5" />
                                 </div>
-                                <select
-                                    value={formData.modalidad}
-                                    onChange={(e) => setFormData({ ...formData, modalidad: e.target.value })}
-                                    className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-mineral-green/20 focus:border-mineral-green transition-colors outline-none bg-white appearance-none"
-                                >
-                                    <option>Virtual</option>
-                                    <option>In-Person</option>
-                                </select>
+                                {loadingData ? (
+                                    <div className="w-full h-10 bg-gray-200 rounded-xl animate-pulse"></div>
+                                ) : (
+                                    <select
+                                        required
+                                        value={formData.modalidad_id}
+                                        onChange={(e) => setFormData({ ...formData, modalidad_id: e.target.value })}
+                                        className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-mineral-green/20 focus:border-mineral-green transition-colors outline-none bg-white appearance-none"
+                                    >
+                                        <option value="">Select modality</option>
+                                        {modalidades.map(modalidad => (
+                                            <option key={modalidad.id} value={modalidad.id}>{modalidad.name}</option>
+                                        ))}
+                                    </select>
+                                )}
                             </div>
                         </div>
 
@@ -373,6 +428,7 @@ export default function AppointmentForm({ onSuccess, onSpecialistChange }) {
                                     required
                                     value={dateValue}
                                     onChange={handleDateChange}
+                                    min={new Date().toISOString().split('T')[0]}
                                     className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-mineral-green/20 focus:border-mineral-green transition-colors outline-none"
                                 />
                             </div>
@@ -445,7 +501,7 @@ export default function AppointmentForm({ onSuccess, onSpecialistChange }) {
                         </div>
                     </div>
 
-                    {formData.modalidad === 'In-Person' && (
+                    {modalidades.find(m => m.id === formData.modalidad_id)?.name === 'In-Person' && (
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Address

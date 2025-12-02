@@ -39,22 +39,24 @@ export default function AppointmentList({ refreshTrigger, onRefresh }) {
             if (onRefresh) onRefresh();
         } catch (err) {
             console.error('Delete error:', err);
-            const errorMessage = err?.message || err?.error?.message || 'Unknown error';
-            alert(`Failed to delete appointment: ${errorMessage}`);
+            // Extract user-friendly error message
+            const errorMessage = err?.error?.error || err?.message || 'Failed to delete appointment. Please try again.';
+            alert(errorMessage);
         }
     };
 
-    const handleStatusUpdate = async (id, status) => {
+    const handleStatusUpdate = async (id, status_name) => {
         try {
-            await appointmentService.updateStatus(id, status);
+            await appointmentService.updateStatus(id, status_name);
             // Refresh the list
             await fetchAppointments();
             // Trigger parent refresh to update calendar
             if (onRefresh) onRefresh();
         } catch (err) {
             console.error('Update status error:', err);
-            const errorMessage = err?.message || err?.error?.message || 'Unknown error';
-            alert(`Failed to update status: ${errorMessage}`);
+            // Extract user-friendly error message
+            const errorMessage = err?.error?.error || err?.message || 'Failed to update status. Please try again.';
+            alert(errorMessage);
         }
     };
 
@@ -104,8 +106,8 @@ export default function AppointmentList({ refreshTrigger, onRefresh }) {
                 {appointments.map((appointment) => (
                     <div
                         key={appointment.id}
-                        className={`bg-white p-6 rounded-2xl shadow-sm border transition-all hover:shadow-md flex flex-col justify-between h-full ${appointment.status === 'approved' ? 'border-green-200' :
-                            appointment.status === 'rejected' ? 'border-red-200' : 'border-gray-100'
+                        className={`bg-white p-6 rounded-2xl shadow-sm border transition-all hover:shadow-md flex flex-col justify-between h-full ${appointment.status?.name === 'approved' ? 'border-green-200' :
+                            appointment.status?.name === 'rejected' ? 'border-red-200' : 'border-gray-100'
                             }`}
                     >
                         <div className="space-y-4 mb-4">
@@ -114,11 +116,11 @@ export default function AppointmentList({ refreshTrigger, onRefresh }) {
                                     <Building className="w-5 h-5 flex-shrink-0" />
                                     <span className="truncate">{appointment.empresa}</span>
                                 </div>
-                                <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide flex-shrink-0 ${appointment.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                    appointment.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide flex-shrink-0 ${appointment.status?.name === 'approved' ? 'bg-green-100 text-green-800' :
+                                    appointment.status?.name === 'rejected' ? 'bg-red-100 text-red-800' :
                                         'bg-yellow-100 text-yellow-800'
                                     }`}>
-                                    {appointment.status}
+                                    {appointment.status?.name || 'pending'}
                                 </span>
                             </div>
 
@@ -138,14 +140,14 @@ export default function AppointmentList({ refreshTrigger, onRefresh }) {
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                    {appointment.modalidad === 'Virtual' ? (
+                                    {appointment.modalidad?.name === 'Virtual' ? (
                                         <Video className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                     ) : (
                                         <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                     )}
                                     <span className="truncate">
-                                        {appointment.modalidad}
-                                        {appointment.modalidad !== 'Virtual' && ` - ${appointment.direccion}`}
+                                        {appointment.modalidad?.name || 'Unknown'}
+                                        {appointment.modalidad?.name !== 'Virtual' && appointment.direccion && ` - ${appointment.direccion}`}
                                     </span>
                                 </div>
                             </div>
@@ -157,7 +159,7 @@ export default function AppointmentList({ refreshTrigger, onRefresh }) {
 
                         <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-2 justify-end">
                             {/* Employees can approve/reject pending appointments */}
-                            {isEmployee && appointment.status === 'pending' && (
+                            {isEmployee && appointment.status?.name === 'pending' && (
                                 <>
                                     <button
                                         onClick={() => handleStatusUpdate(appointment.id, 'approved')}
@@ -177,7 +179,7 @@ export default function AppointmentList({ refreshTrigger, onRefresh }) {
                             )}
 
                             {/* Customers can accept/reject appointments created by employees */}
-                            {!isEmployee && appointment.status === 'approved' && (
+                            {!isEmployee && appointment.status?.name === 'pending' && (
                                 <>
                                     <button
                                         onClick={() => handleStatusUpdate(appointment.id, 'approved')}

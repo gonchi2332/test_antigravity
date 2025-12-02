@@ -55,14 +55,26 @@ async function seedCustomers() {
             const userId = authData.user.id;
             console.log(`Created auth user: ${customer.email} (${userId})`);
 
-            // 2. Update Profile (Trigger might have created it, but we need to set role)
+            // 2. Get role_id for user role
+            const { data: roleData, error: roleError } = await supabase
+                .from('roles')
+                .select('id')
+                .eq('name', customer.role)
+                .single();
+
+            if (roleError) {
+                console.error(`Error fetching role for ${customer.email}:`, roleError.message);
+                continue;
+            }
+
+            // 3. Update Profile (Trigger might have created it, but we need to set role_id)
             const { error: profileError } = await supabase
                 .from('profiles')
                 .upsert({
                     id: userId,
                     email: customer.email,
                     full_name: customer.full_name,
-                    role: customer.role,
+                    role_id: roleData.id,
                     updated_at: new Date()
                 });
 
