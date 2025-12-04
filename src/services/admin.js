@@ -129,6 +129,148 @@ export const adminService = {
 
         if (error) throw error;
         return data || [];
+    },
+
+    // Delete user or employee (admin only)
+    async deleteUser(userId) {
+        // Verify current user is admin
+        const isAdmin = await this.isAdmin();
+        if (!isAdmin) {
+            throw new Error('Solo los administradores pueden eliminar usuarios');
+        }
+
+        // Get session for authentication
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            throw new Error('No hay sesión activa');
+        }
+
+        // Call Edge Function to delete user
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const response = await fetch(`${supabaseUrl}/functions/v1/delete-user`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({ userId })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Error al eliminar usuario');
+        }
+
+        return result;
+    },
+
+    // Get dashboard statistics
+    async getDashboardStats() {
+        try {
+            // Get total users count
+            let totalUsers = 0;
+            try {
+                const { data: usersRoleData } = await supabase
+                    .from('roles')
+                    .select('id')
+                    .eq('name', 'user')
+                    .single();
+
+                if (usersRoleData) {
+                    const { count } = await supabase
+                        .from('profiles')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('role_id', usersRoleData.id);
+                    totalUsers = count || 0;
+                }
+            } catch (e) {
+                console.warn('Could not get total users:', e);
+            }
+
+            // Get total employees count (only employees, not admins)
+            let totalEmployees = 0;
+            try {
+                const { data: employeesRoleData } = await supabase
+                    .from('roles')
+                    .select('id')
+                    .eq('name', 'employee')
+                    .single();
+
+                if (employeesRoleData) {
+                    const { count } = await supabase
+                        .from('profiles')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('role_id', employeesRoleData.id);
+                    totalEmployees = count || 0;
+                }
+            } catch (e) {
+                console.warn('Could not get total employees:', e);
+            }
+
+            // Get recent users (last 7 days)
+            let recentUsers = 0;
+            try {
+                const { data: usersRoleData } = await supabase
+                    .from('roles')
+                    .select('id')
+                    .eq('name', 'user')
+                    .single();
+
+                if (usersRoleData) {
+                    const sevenDaysAgo = new Date();
+                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                    
+                    const { count } = await supabase
+                        .from('profiles')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('role_id', usersRoleData.id)
+                        .gte('created_at', sevenDaysAgo.toISOString());
+                    recentUsers = count || 0;
+                }
+            } catch (e) {
+                console.warn('Could not get recent users:', e);
+            }
+
+            // Get recent employees (last 7 days)
+            let recentEmployees = 0;
+            try {
+                const { data: employeesRoleData } = await supabase
+                    .from('roles')
+                    .select('id')
+                    .eq('name', 'employee')
+                    .single();
+
+                if (employeesRoleData) {
+                    const sevenDaysAgo = new Date();
+                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                    
+                    const { count } = await supabase
+                        .from('profiles')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('role_id', employeesRoleData.id)
+                        .gte('created_at', sevenDaysAgo.toISOString());
+                    recentEmployees = count || 0;
+                }
+            } catch (e) {
+                console.warn('Could not get recent employees:', e);
+            }
+
+            return {
+                totalUsers,
+                totalEmployees,
+                recentUsers,
+                recentEmployees
+            };
+        } catch (error) {
+            console.error('Error getting dashboard stats:', error);
+            return {
+                totalUsers: 0,
+                totalEmployees: 0,
+                recentUsers: 0,
+                recentEmployees: 0
+            };
+        }
     }
 };
 

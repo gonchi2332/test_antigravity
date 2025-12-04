@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, User, Mail, Briefcase } from 'lucide-react';
 import { adminService } from '../../services/admin';
-import CalendlyView from '../CalendlyView';
 
 export default function EmployeeProfile({ employeeId, onBack }) {
     const [employee, setEmployee] = useState(null);
@@ -97,14 +96,6 @@ export default function EmployeeProfile({ employeeId, onBack }) {
                             </div>
                         </div>
                     </div>
-                </div>
-
-                {/* Calendly View */}
-                <div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-4">Calendario</h2>
-                    <CalendlyView 
-                        selectedEmployeeId={employeeId}
-                    />
                 </div>
             </div>
         </div>

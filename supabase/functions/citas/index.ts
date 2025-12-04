@@ -5,11 +5,13 @@ import { CitasService } from "./services/citasService.ts"
 import { CitasController } from "./controllers/citasController.ts"
 
 serve(async (req) => {
+    const origin = req.headers.get('Origin')
+    
     // Handle CORS preflight - MUST be the first thing
     if (req.method === 'OPTIONS') {
         return new Response(null, { 
             status: 204,
-            headers: corsHeaders
+            headers: corsHeaders(origin)
         })
     }
 
@@ -20,7 +22,7 @@ serve(async (req) => {
 
         if (!supabaseUrl || !supabaseAnonKey) {
             console.error('Missing required environment variables')
-            return corsResponse({ error: 'Server configuration error' }, 500)
+            return corsResponse({ error: 'Server configuration error' }, 500, origin)
         }
 
         // Get Supabase client
@@ -30,7 +32,7 @@ serve(async (req) => {
         // Authenticate user
         const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
         if (userError || !user) {
-            return corsResponse({ error: 'Unauthorized' }, 401)
+            return corsResponse({ error: 'Unauthorized' }, 401, origin)
         }
 
         // Get user role from profiles (join with roles table)
@@ -52,15 +54,15 @@ serve(async (req) => {
         // Route to controller based on HTTP method
         switch (req.method) {
             case 'POST':
-                return await CitasController.create(req, citasService)
+                return await CitasController.create(req, citasService, origin)
             case 'GET':
-                return await CitasController.getAll(req, citasService)
+                return await CitasController.getAll(req, citasService, origin)
             case 'PUT':
-                return await CitasController.update(req, citasService)
+                return await CitasController.update(req, citasService, origin)
             case 'DELETE':
-                return await CitasController.delete(req, citasService)
+                return await CitasController.delete(req, citasService, origin)
             default:
-                return corsResponse({ error: 'Method not allowed' }, 405)
+                return corsResponse({ error: 'Method not allowed' }, 405, origin)
         }
 
     } catch (error: any) {
@@ -72,7 +74,7 @@ serve(async (req) => {
         })
 
         // Return generic error to client (don't expose internal details)
-        return corsResponse({ error: 'An internal error occurred. Please try again later.' }, 500)
+        return corsResponse({ error: 'An internal error occurred. Please try again later.' }, 500, origin)
     }
 })
 

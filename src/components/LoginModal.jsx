@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { X, Mail, User, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { validatePassword, validateEmail, validateFullName, sanitizeString } from '../utils/validation';
+import { showError } from '../utils/notifications';
 
 export default function LoginModal({ isOpen, onClose }) {
     const [isLogin, setIsLogin] = useState(true);
@@ -32,13 +34,44 @@ export default function LoginModal({ isOpen, onClose }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
+        
+        // Validate email
+        const emailError = validateEmail(formData.email);
+        if (emailError) {
+            setError(emailError);
+            showError(emailError);
+            return;
+        }
+
+        // Validate password
+        const passwordError = validatePassword(formData.password);
+        if (passwordError) {
+            setError(passwordError);
+            showError(passwordError);
+            return;
+        }
+
+        // Validate full name for signup
+        if (!isLogin) {
+            const nameError = validateFullName(formData.fullName);
+            if (nameError) {
+                setError(nameError);
+                showError(nameError);
+                return;
+            }
+        }
+
         setLoading(true);
 
         try {
+            // Sanitize inputs
+            const sanitizedEmail = formData.email.trim().toLowerCase();
+            const sanitizedFullName = formData.fullName ? sanitizeString(formData.fullName) : '';
+            
             if (isLogin) {
-                await signIn(formData.email, formData.password);
+                await signIn(sanitizedEmail, formData.password);
             } else {
-                await signUp(formData.email, formData.password, formData.fullName);
+                await signUp(sanitizedEmail, formData.password, sanitizedFullName);
             }
             // Clear form on successful login/signup
             setFormData({
@@ -48,7 +81,16 @@ export default function LoginModal({ isOpen, onClose }) {
             });
             onClose();
         } catch (err) {
-            setError(err.message);
+            // Don't expose internal error details
+            const userFriendlyMessage = err.message?.includes('Invalid login credentials')
+                ? 'Email o contraseña incorrectos'
+                : err.message?.includes('already registered')
+                ? 'Este email ya está registrado'
+                : err.message?.includes('Email rate limit')
+                ? 'Demasiados intentos. Por favor, espera un momento.'
+                : 'Ocurrió un error. Por favor, intenta nuevamente.';
+            setError(userFriendlyMessage);
+            showError(userFriendlyMessage);
         } finally {
             setLoading(false);
         }
@@ -64,7 +106,7 @@ export default function LoginModal({ isOpen, onClose }) {
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+            <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
