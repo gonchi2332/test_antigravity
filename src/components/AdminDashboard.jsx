@@ -48,8 +48,8 @@ export default function AdminDashboard() {
         return (
             <div className="flex justify-center items-center min-h-screen">
                 <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Acceso Denegado</h2>
-                    <p className="text-gray-600">Solo los administradores pueden acceder a esta área.</p>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Acceso Denegado</h2>
+                    <p className="text-gray-600 dark:text-gray-400">Solo los administradores pueden acceder a esta área.</p>
                 </div>
             </div>
         );
@@ -99,11 +99,11 @@ export default function AdminDashboard() {
 
     if (currentView === 'user-detail' && selectedUserId) {
         return (
-            <div className="min-h-screen bg-gray-50 py-8">
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <button
                         onClick={() => handleViewChange('users')}
-                        className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                        className="mb-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5" />
                         Volver a Usuarios
@@ -119,26 +119,26 @@ export default function AdminDashboard() {
 
     // Dashboard view (default) - Show calendar
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de Administración</h1>
-                    <p className="text-gray-600">Gestiona empleados y usuarios</p>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Panel de Administración</h1>
+                    <p className="text-gray-600 dark:text-gray-400">Gestiona empleados y usuarios</p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
                     {/* Employees Card */}
                     <button
                         onClick={() => handleViewChange('employees')}
-                        className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all text-left group"
+                        className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all text-left group"
                     >
                         <div className="flex items-center justify-between mb-4">
-                            <div className="p-3 bg-mineral-green/10 rounded-xl group-hover:bg-mineral-green/20 transition-colors">
+                            <div className="p-3 bg-mineral-green/10 dark:bg-mineral-green/20 rounded-xl group-hover:bg-mineral-green/20 dark:group-hover:bg-mineral-green/30 transition-colors">
                                 <Users className="w-8 h-8 text-mineral-green" />
                             </div>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">Empleados</h3>
-                        <p className="text-gray-600 text-sm">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Empleados</h3>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">
                             Ver y gestionar empleados y especialistas
                         </p>
                     </button>
@@ -146,15 +146,15 @@ export default function AdminDashboard() {
                     {/* Users Card */}
                     <button
                         onClick={() => handleViewChange('users')}
-                        className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all text-left group"
+                        className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all text-left group"
                     >
                         <div className="flex items-center justify-between mb-4">
-                            <div className="p-3 bg-blue-500/10 rounded-xl group-hover:bg-blue-500/20 transition-colors">
+                            <div className="p-3 bg-blue-500/10 dark:bg-blue-500/20 rounded-xl group-hover:bg-blue-500/20 dark:group-hover:bg-blue-500/30 transition-colors">
                                 <UserPlus className="w-8 h-8 text-blue-500" />
                             </div>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">Usuarios</h3>
-                        <p className="text-gray-600 text-sm">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Usuarios</h3>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">
                             Ver y gestionar usuarios
                         </p>
                     </button>
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
 
                 {/* Calendar */}
                 <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Calendario</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Calendario</h2>
                     <CalendlyView selectedEmployeeId={null} />
                 </div>
             </div>

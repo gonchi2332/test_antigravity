@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 import { InlineWidget } from 'react-calendly';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 // TODO: Si quieres URLs específicas por empleado, descomenta y configura este mapeo:
 // import { calendlyUrls } from '../config/calendly';
 
 export default function CalendlyView({ calendlyUrl, selectedEmployeeId }) {
     const { user } = useAuth();
+    const { isDark } = useTheme();
 
     // Configure prefill data if you have user info
     const prefill = user ? {
@@ -16,11 +18,11 @@ export default function CalendlyView({ calendlyUrl, selectedEmployeeId }) {
 
     // Add custom parameters for styling (matching your mineral-green theme)
     const pageSettings = {
-        backgroundColor: 'ffffff',
+        backgroundColor: isDark ? '1f2937' : 'ffffff',
         hideEventTypeDetails: true, // Hide event type name AND organizer/host name
         hideLandingPageDetails: true, // Hide landing page details
         primaryColor: '00a86b', // mineral-green color
-        textColor: '4d5055'
+        textColor: isDark ? 'f9fafb' : '4d5055'
     };
 
     const utm = {
@@ -335,11 +337,18 @@ export default function CalendlyView({ calendlyUrl, selectedEmployeeId }) {
                     touch-action: pan-y;
                 }
                 
+                /* Dark mode styling - apply filter to iframe for dark theme */
+                ${isDark ? `
+                    .calendly-inline-widget iframe {
+                        filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(1.05);
+                    }
+                ` : ''}
+                
                 /* Hide event type name and organizer name - using CSS that might work */
                 /* Note: Direct CSS manipulation of iframe content is limited by CORS, 
                    so we rely on URL parameters and pageSettings primarily */
             `}</style>
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 w-full calendly-container-wrapper">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700 w-full calendly-container-wrapper">
                 <InlineWidget
                     url={finalUrl}
                     styles={{

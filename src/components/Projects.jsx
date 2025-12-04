@@ -27,13 +27,13 @@ export default function Projects() {
     }
 
     return (
-        <section className="py-24 bg-white">
+        <section className="py-24 bg-white dark:bg-gray-900">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16">
-                    <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+                    <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
                         Nuestros Proyectos
                     </h2>
-                    <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                    <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                         Descubre algunos de los proyectos en los que hemos trabajado.
                     </p>
                 </div>
@@ -45,7 +45,7 @@ export default function Projects() {
                             href={project.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-all duration-300 border border-gray-100 group"
+                            className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 hover:shadow-lg transition-all duration-300 border border-gray-100 dark:border-gray-700 group"
                         >
                             {project.image && (
                                 <div className="mb-6 rounded-xl overflow-hidden aspect-video bg-gradient-to-br from-mineral-green/10 to-mineral-green/5">
@@ -57,12 +57,12 @@ export default function Projects() {
                                 </div>
                             )}
                             <div className="flex items-start justify-between mb-4">
-                                <h3 className="text-xl font-bold text-gray-900 group-hover:text-mineral-green transition-colors">
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 group-hover:text-mineral-green transition-colors">
                                     {project.name}
                                 </h3>
-                                <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-mineral-green transition-colors flex-shrink-0 ml-2" />
+                                <ExternalLink className="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-mineral-green transition-colors flex-shrink-0 ml-2" />
                             </div>
-                            <p className="text-gray-600 leading-relaxed">
+                            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                                 {project.description}
                             </p>
                         </a>

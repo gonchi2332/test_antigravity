@@ -66,7 +66,7 @@ function App() {
   return (
     <Layout>
       {userRole === 'admin' && (
-        <div className="bg-mineral-green text-white py-2">
+        <div className="bg-mineral-green dark:bg-mineral-green-dark text-white py-2">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
             <span className="text-sm">
               Panel de Administración disponible
@@ -84,11 +84,11 @@ function App() {
       <Hero />
 
       {user && (
-        <section className="py-20 bg-gray-50" id="appointments">
+        <section className="py-20 bg-gray-50 dark:bg-gray-800/50" id="appointments">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Agendar Consulta</h2>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">Agendar Consulta</h2>
+              <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                 Selecciona una fecha y hora para tu consulta.
               </p>
             </div>
