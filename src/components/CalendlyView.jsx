@@ -1,20 +1,67 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { InlineWidget } from 'react-calendly';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { employeeService } from '../services/employee';
+import { supabase } from '../lib/supabase';
 
-// TODO: Si quieres URLs específicas por empleado, descomenta y configura este mapeo:
-// import { calendlyUrls } from '../config/calendly';
-
-export default function CalendlyView({ calendlyUrl, selectedEmployeeId }) {
+export default function CalendlyView({ calendlyUrl, selectedEmployeeId, selectedCustomerId }) {
     const { user } = useAuth();
     const { isDark } = useTheme();
+    const [employeeCalendlyUrl, setEmployeeCalendlyUrl] = useState(null);
+    const [customerData, setCustomerData] = useState(null);
+    const [loading, setLoading] = useState(false);
 
-    // Configure prefill data if you have user info
-    const prefill = user ? {
+    // Load employee Calendly URL from database if selectedEmployeeId is provided
+    useEffect(() => {
+        const loadEmployeeCalendlyUrl = async () => {
+            if (selectedEmployeeId && !calendlyUrl) {
+                try {
+                    setLoading(true);
+                    const { data: profile, error } = await supabase
+                        .from('profiles')
+                        .select('calendly_url')
+                        .eq('id', selectedEmployeeId)
+                        .single();
+                    
+                    if (!error && profile?.calendly_url) {
+                        setEmployeeCalendlyUrl(profile.calendly_url);
+                    }
+                } catch (error) {
+                    console.error('Error loading employee Calendly URL:', error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        loadEmployeeCalendlyUrl();
+    }, [selectedEmployeeId, calendlyUrl]);
+
+    // Load customer data if selectedCustomerId is provided (for employee booking)
+    useEffect(() => {
+        const loadCustomerData = async () => {
+            if (selectedCustomerId) {
+                try {
+                    const customer = await employeeService.getCustomerById(selectedCustomerId);
+                    setCustomerData(customer);
+                } catch (error) {
+                    console.error('Error loading customer data:', error);
+                }
+            }
+        };
+        loadCustomerData();
+    }, [selectedCustomerId]);
+
+    // Configure prefill data
+    // If customer data is provided (employee booking), use customer data
+    // Otherwise, use current user data
+    const prefill = customerData ? {
+        name: customerData.full_name || '',
+        email: customerData.email || '',
+    } : (user ? {
         name: user.user_metadata?.full_name || '',
         email: user.email || '',
-    } : {};
+    } : {});
 
     // Add custom parameters for styling (matching your mineral-green theme)
     const pageSettings = {
@@ -32,25 +79,28 @@ export default function CalendlyView({ calendlyUrl, selectedEmployeeId }) {
     };
 
     // Determine the URL to use
-    // Priority: 1. calendlyUrl prop, 2. Employee-specific URL, 3. Environment variable, 4. Default
-    let url = calendlyUrl;
-    
-    if (!url && selectedEmployeeId) {
-        // TODO: Si configuraste el mapeo de empleados, descomenta esto:
-        // url = calendlyUrls?.[selectedEmployeeId];
-    }
+    // Priority: 1. calendlyUrl prop, 2. Employee-specific URL from DB, 3. Environment variable, 4. Default
+    let url = calendlyUrl || employeeCalendlyUrl;
     
     if (!url) {
         url = import.meta.env.VITE_CALENDLY_DEFAULT_URL || 'https://calendly.com/your-username/consultation';
     }
 
     // Add URL parameters to hide event type details and organizer/host name
-    const urlWithParams = new URL(url);
-    urlWithParams.searchParams.set('hide_event_type_details', '1');
-    urlWithParams.searchParams.set('hide_landing_page_details', '1');
-    // Hide organizer/host name by hiding all event type details
-    urlWithParams.searchParams.set('hide_gdpr_banner', '1');
-    const finalUrl = urlWithParams.toString();
+    let finalUrl = '';
+    if (url) {
+        try {
+            const urlWithParams = new URL(url);
+            urlWithParams.searchParams.set('hide_event_type_details', '1');
+            urlWithParams.searchParams.set('hide_landing_page_details', '1');
+            // Hide organizer/host name by hiding all event type details
+            urlWithParams.searchParams.set('hide_gdpr_banner', '1');
+            finalUrl = urlWithParams.toString();
+        } catch (error) {
+            console.error('Invalid Calendly URL:', error);
+            finalUrl = url;
+        }
+    }
 
     // Use effect to manipulate iframe after load (for hiding name and adjusting scroll)
     useEffect(() => {
@@ -298,7 +348,17 @@ export default function CalendlyView({ calendlyUrl, selectedEmployeeId }) {
             }
             clearInterval(intervalId);
         };
-    }, [finalUrl]);
+    }, [finalUrl, employeeCalendlyUrl]);
+
+
+    // Show loading state while fetching employee Calendly URL
+    if (loading && !url) {
+        return (
+            <div className="flex justify-center items-center h-900px">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-mineral-green"></div>
+            </div>
+        );
+    }
 
     return (
         <>
@@ -348,19 +408,27 @@ export default function CalendlyView({ calendlyUrl, selectedEmployeeId }) {
                 /* Note: Direct CSS manipulation of iframe content is limited by CORS, 
                    so we rely on URL parameters and pageSettings primarily */
             `}</style>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700 w-full calendly-container-wrapper">
-                <InlineWidget
-                    url={finalUrl}
-                    styles={{
-                        height: '900px',
-                        minWidth: '320px',
-                        width: '100%'
-                    }}
-                    pageSettings={pageSettings}
-                    prefill={prefill}
-                    utm={utm}
-                />
-            </div>
+            {finalUrl ? (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700 w-full calendly-container-wrapper">
+                    <InlineWidget
+                        url={finalUrl}
+                        styles={{
+                            height: '900px',
+                            minWidth: '320px',
+                            width: '100%'
+                        }}
+                        pageSettings={pageSettings}
+                        prefill={prefill}
+                        utm={utm}
+                    />
+                </div>
+            ) : (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-12 text-center">
+                    <p className="text-gray-600 dark:text-gray-400">
+                        No se ha configurado una URL de Calendly. Por favor, contacta al administrador.
+                    </p>
+                </div>
+            )}
         </>
     );
 }

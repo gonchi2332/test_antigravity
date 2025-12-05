@@ -41,7 +41,6 @@ export const AuthProvider = ({ children }) => {
         signIn: authService.signIn,
         signUp: authService.signUp,
         signOut: authService.signOut,
-        signInWithProvider: authService.signInWithProvider,
     };
 
     return (

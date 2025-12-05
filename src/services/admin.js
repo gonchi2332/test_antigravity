@@ -49,7 +49,7 @@ export const adminService = {
                 id,
                 email,
                 full_name,
-                specialty:specialties!profiles_specialty_id_fkey(id, name),
+                calendly_url,
                 role:roles!profiles_role_id_fkey(name),
                 created_at
             `)
@@ -89,7 +89,7 @@ export const adminService = {
 
     // Create a new employee (admin only - requires creating auth user first)
     // This is a helper that will be used after creating the auth user
-    async updateUserRole(userId, roleName, specialtyId = null) {
+    async updateUserRole(userId, roleName) {
         // Get role ID
         const { data: roleData, error: roleError } = await supabase
             .from('roles')
@@ -100,14 +100,10 @@ export const adminService = {
         if (roleError) throw roleError;
         if (!roleData) throw new Error(`Role ${roleName} not found`);
 
-        // Update profile with role and specialty
+        // Update profile with role
         const updateData = {
             role_id: roleData.id
         };
-
-        if (specialtyId) {
-            updateData.specialty_id = specialtyId;
-        }
 
         const { data, error } = await supabase
             .from('profiles')
@@ -120,16 +116,6 @@ export const adminService = {
         return data;
     },
 
-    // Get all specialties
-    async getSpecialties() {
-        const { data, error } = await supabase
-            .from('specialties')
-            .select('id, name, description')
-            .order('name');
-
-        if (error) throw error;
-        return data || [];
-    },
 
     // Delete user or employee (admin only)
     async deleteUser(userId) {
@@ -271,6 +257,43 @@ export const adminService = {
                 recentEmployees: 0
             };
         }
+    },
+
+    // Update Calendly URL for any user (admin can update any, employees can update their own)
+    async updateCalendlyUrl(userId, calendlyUrl) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        // Check if user is admin or updating their own profile
+        const role = await this.getUserRole();
+        if (role !== 'admin' && user.id !== userId) {
+            throw new Error('Unauthorized: You can only update your own Calendly URL');
+        }
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .update({ 
+                calendly_url: calendlyUrl || null,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', userId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    // Get Calendly URL for any user
+    async getCalendlyUrl(userId) {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('calendly_url')
+            .eq('id', userId)
+            .single();
+
+        if (error) throw error;
+        return data?.calendly_url || null;
     }
 };
 

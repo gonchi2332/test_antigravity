@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, UserPlus, ArrowLeft, TrendingUp, BarChart3, Activity } from 'lucide-react';
+import { Users, UserPlus, ArrowLeft, TrendingUp, BarChart3, Activity, Calendar, Save } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { adminService } from '../services/admin';
 import EmployeeList from './admin/EmployeeList';
@@ -15,6 +15,9 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState(null);
     const [statsLoading, setStatsLoading] = useState(true);
+    const [myCalendlyUrl, setMyCalendlyUrl] = useState('');
+    const [editingMyCalendly, setEditingMyCalendly] = useState(false);
+    const [savingCalendly, setSavingCalendly] = useState(false);
 
     useEffect(() => {
         const checkRole = async () => {
@@ -52,6 +55,20 @@ export default function AdminDashboard() {
         };
         loadStats();
     }, [userRole]);
+
+    useEffect(() => {
+        const loadMyCalendlyUrl = async () => {
+            if (user && userRole === 'admin') {
+                try {
+                    const url = await adminService.getCalendlyUrl(user.id);
+                    setMyCalendlyUrl(url || '');
+                } catch (error) {
+                    console.error('Error loading Calendly URL:', error);
+                }
+            }
+        };
+        loadMyCalendlyUrl();
+    }, [user, userRole]);
 
     if (loading) {
         return (
@@ -205,6 +222,104 @@ export default function AdminDashboard() {
                         </button>
                     </div>
                 )}
+
+                {/* My Calendly URL Section */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-8">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-mineral-green/10 dark:bg-mineral-green/20 rounded-lg">
+                                <Calendar className="w-6 h-6 text-mineral-green" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Mi URL de Calendly</h2>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Configura tu URL de Calendly personal</p>
+                            </div>
+                        </div>
+                        {!editingMyCalendly && (
+                            <button
+                                onClick={() => setEditingMyCalendly(true)}
+                                className="px-4 py-2 text-sm font-medium text-mineral-green hover:bg-mineral-green/10 dark:hover:bg-mineral-green/20 rounded-lg transition-colors"
+                            >
+                                {myCalendlyUrl ? 'Editar' : 'Agregar URL'}
+                            </button>
+                        )}
+                    </div>
+
+                    {editingMyCalendly ? (
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    URL de Calendly
+                                </label>
+                                <input
+                                    type="url"
+                                    value={myCalendlyUrl}
+                                    onChange={(e) => setMyCalendlyUrl(e.target.value)}
+                                    placeholder="https://calendly.com/tu-usuario/evento"
+                                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-mineral-green focus:border-transparent"
+                                />
+                                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                    Ingresa tu URL completa de Calendly
+                                </p>
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            setSavingCalendly(true);
+                                            await adminService.updateCalendlyUrl(user.id, myCalendlyUrl);
+                                            const url = await adminService.getCalendlyUrl(user.id);
+                                            setMyCalendlyUrl(url || '');
+                                            setEditingMyCalendly(false);
+                                            alert('URL de Calendly actualizada correctamente');
+                                        } catch (error) {
+                                            console.error('Error updating Calendly URL:', error);
+                                            alert('Error al actualizar la URL de Calendly');
+                                        } finally {
+                                            setSavingCalendly(false);
+                                        }
+                                    }}
+                                    disabled={savingCalendly}
+                                    className="flex items-center gap-2 px-6 py-2 bg-mineral-green text-white rounded-lg font-medium hover:bg-mineral-green-dark transition-colors shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Save className="w-4 h-4" />
+                                    {savingCalendly ? 'Guardando...' : 'Guardar'}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const loadUrl = async () => {
+                                            const url = await adminService.getCalendlyUrl(user.id);
+                                            setMyCalendlyUrl(url || '');
+                                        };
+                                        loadUrl();
+                                        setEditingMyCalendly(false);
+                                    }}
+                                    disabled={savingCalendly}
+                                    className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            {myCalendlyUrl ? (
+                                <div className="flex items-center justify-between">
+                                    <a
+                                        href={myCalendlyUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-mineral-green hover:text-mineral-green-dark font-medium break-all"
+                                    >
+                                        {myCalendlyUrl}
+                                    </a>
+                                </div>
+                            ) : (
+                                <p className="text-gray-500 dark:text-gray-400 italic">No se ha configurado una URL de Calendly</p>
+                            )}
+                        </div>
+                    )}
+                </div>
 
                 {/* Quick Actions */}
                 <div className="mb-8">

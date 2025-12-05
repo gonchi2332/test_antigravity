@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, UserPlus, Search, User, Mail, Briefcase, Plus, X, Loader2, Trash2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, UserPlus, Search, User, Mail, Plus, X, Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { adminService } from '../../services/admin';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -13,12 +13,10 @@ export default function EmployeeList({ onBack, onEmployeeClick, canAddEmployee, 
     const [searchTerm, setSearchTerm] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
     const [adding, setAdding] = useState(false);
-    const [specialties, setSpecialties] = useState([]);
     const [newEmployee, setNewEmployee] = useState({
         email: '',
         password: '',
-        full_name: '',
-        specialty_id: ''
+        full_name: ''
     });
     const [error, setError] = useState(null);
     const [employeeToDelete, setEmployeeToDelete] = useState(null);
@@ -27,9 +25,6 @@ export default function EmployeeList({ onBack, onEmployeeClick, canAddEmployee, 
 
     useEffect(() => {
         loadEmployees();
-        if (canAddEmployee) {
-            loadSpecialties();
-        }
     }, []);
 
     const loadEmployees = async () => {
@@ -45,14 +40,6 @@ export default function EmployeeList({ onBack, onEmployeeClick, canAddEmployee, 
         }
     };
 
-    const loadSpecialties = async () => {
-        try {
-            const data = await adminService.getSpecialties();
-            setSpecialties(data || []);
-        } catch (err) {
-            console.error('Error loading specialties:', err);
-        }
-    };
 
     const handleAddEmployee = async (e) => {
         e.preventDefault();
@@ -104,16 +91,15 @@ export default function EmployeeList({ onBack, onEmployeeClick, canAddEmployee, 
             // Wait a moment for the profile to be created by the trigger
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Update profile with employee role and specialty
+            // Update profile with employee role
             await adminService.updateUserRole(
                 authData.user.id,
-                'employee',
-                newEmployee.specialty_id || null
+                'employee'
             );
 
             // Close modal and reload
             setShowAddModal(false);
-            setNewEmployee({ email: '', password: '', full_name: '', specialty_id: '' });
+            setNewEmployee({ email: '', password: '', full_name: '' });
             await loadEmployees();
             
             showSuccess('Empleado creado exitosamente. El usuario recibirá un email de confirmación.');
@@ -258,12 +244,6 @@ export default function EmployeeList({ onBack, onEmployeeClick, canAddEmployee, 
                                             <Mail className="w-4 h-4" />
                                             <span className="truncate">{employee.email}</span>
                                         </div>
-                                        {employee.specialty && (
-                                            <div className="flex items-center gap-2">
-                                                <Briefcase className="w-4 h-4" />
-                                                <span>{employee.specialty.name}</span>
-                                            </div>
-                                        )}
                                     </div>
                                 </button>
                             </div>
@@ -361,7 +341,7 @@ export default function EmployeeList({ onBack, onEmployeeClick, canAddEmployee, 
                                 onClick={() => {
                                     setShowAddModal(false);
                                     setError(null);
-                                    setNewEmployee({ email: '', password: '', full_name: '', specialty_id: '' });
+                                    setNewEmployee({ email: '', password: '', full_name: '' });
                                 }}
                                 className="p-2 hover:bg-gray-100hover:bg-gray-700 rounded-lg transition-colors"
                             >
@@ -410,22 +390,6 @@ export default function EmployeeList({ onBack, onEmployeeClick, canAddEmployee, 
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Especialidad
-                                </label>
-                                <select
-                                    value={newEmployee.specialty_id}
-                                    onChange={(e) => setNewEmployee({ ...newEmployee, specialty_id: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-mineral-green/20 focus:border-mineral-green outline-none"
-                                >
-                                    <option value="">Sin especialidad</option>
-                                    {specialties.map(spec => (
-                                        <option key={spec.id} value={spec.id}>{spec.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
                             {error && (
                                 <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-sm">
                                     {error}
@@ -438,7 +402,7 @@ export default function EmployeeList({ onBack, onEmployeeClick, canAddEmployee, 
                                     onClick={() => {
                                         setShowAddModal(false);
                                         setError(null);
-                                        setNewEmployee({ email: '', password: '', full_name: '', specialty_id: '' });
+                                        setNewEmployee({ email: '', password: '', full_name: '' });
                                     }}
                                     className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
                                     disabled={adding}

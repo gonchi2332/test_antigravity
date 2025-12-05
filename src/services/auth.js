@@ -24,14 +24,6 @@ export const authService = {
         return data;
     },
 
-    async signInWithProvider(provider) {
-        const { data, error } = await supabase.auth.signInWithOAuth({
-            provider,
-        });
-        if (error) throw error;
-        return data;
-    },
-
     async signOut() {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;

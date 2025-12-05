@@ -8,6 +8,7 @@ export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
+    const [loginMode, setLoginMode] = useState('login'); // 'login' or 'register'
     const { user, signOut } = useAuth();
     const { isDark, toggleTheme } = useTheme();
 
@@ -63,13 +64,22 @@ export default function Navbar() {
                                 ) : (
                                     <>
                                         <button
-                                            onClick={() => setIsLoginOpen(true)}
+                                            onClick={() => {
+                                                setLoginMode('login');
+                                                setIsLoginOpen(true);
+                                            }}
                                             className="text-gray-900 dark:text-gray-100 hover:text-mineral-green font-medium px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 transition-all"
                                         >
                                             Sign In
                                         </button>
-                                        <button className="bg-mineral-green text-white px-5 py-2.5 rounded-full font-medium hover:bg-mineral-green-dark transition-colors shadow-sm hover:shadow-md">
-                                            Get Started
+                                        <button 
+                                            onClick={() => {
+                                                setLoginMode('register');
+                                                setIsLoginOpen(true);
+                                            }}
+                                            className="bg-mineral-green text-white px-5 py-2.5 rounded-full font-medium hover:bg-mineral-green-dark transition-colors shadow-sm hover:shadow-md"
+                                        >
+                                            Register
                                         </button>
                                     </>
                                 )}
@@ -114,13 +124,24 @@ export default function Navbar() {
                                 ) : (
                                     <>
                                         <button
-                                            onClick={() => { setIsLoginOpen(true); setIsOpen(false); }}
+                                            onClick={() => { 
+                                                setLoginMode('login');
+                                                setIsLoginOpen(true); 
+                                                setIsOpen(false); 
+                                            }}
                                             className="w-full text-center text-gray-900 dark:text-gray-100 font-medium px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
                                         >
                                             Sign In
                                         </button>
-                                        <button className="w-full text-center bg-mineral-green text-white px-4 py-2 rounded-full font-medium hover:bg-mineral-green-dark">
-                                            Get Started
+                                        <button 
+                                            onClick={() => {
+                                                setLoginMode('register');
+                                                setIsLoginOpen(true);
+                                                setIsOpen(false);
+                                            }}
+                                            className="w-full text-center bg-mineral-green text-white px-4 py-2 rounded-full font-medium hover:bg-mineral-green-dark"
+                                        >
+                                            Register
                                         </button>
                                     </>
                                 )}
@@ -129,7 +150,11 @@ export default function Navbar() {
                     </div>
                 )}
             </nav>
-            <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+            <LoginModal 
+                isOpen={isLoginOpen} 
+                onClose={() => setIsLoginOpen(false)} 
+                initialMode={loginMode}
+            />
         </>
     )
 }

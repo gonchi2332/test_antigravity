@@ -6,6 +6,7 @@ import AutomationWorkflow from './components/AutomationWorkflow';
 import About from './components/About';
 import CalendlyView from './components/CalendlyView';
 import AdminDashboard from './components/AdminDashboard';
+import EmployeeDashboard from './components/EmployeeDashboard';
 import { useAuth } from './context/AuthContext';
 import { adminService } from './services/admin';
 
@@ -13,7 +14,7 @@ function App() {
   const { user } = useAuth();
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [currentView, setCurrentView] = useState('home'); // 'home' or 'admin'
+  const [currentView, setCurrentView] = useState('home'); // 'home', 'admin', or 'employee'
 
   useEffect(() => {
     const checkRole = async () => {
@@ -27,9 +28,11 @@ function App() {
         const role = await adminService.getUserRole();
         setUserRole(role);
         
-        // Auto-redirect admin to admin dashboard
+        // Auto-redirect admin to admin dashboard, employee to employee dashboard
         if (role === 'admin') {
           setCurrentView('admin');
+        } else if (role === 'employee') {
+          setCurrentView('employee');
         } else {
           setCurrentView('home');
         }
@@ -63,6 +66,15 @@ function App() {
     );
   }
 
+  // Check if user wants to view employee dashboard (only employees)
+  if (userRole === 'employee' && currentView === 'employee') {
+    return (
+      <Layout>
+        <EmployeeDashboard />
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       {userRole === 'admin' && (
@@ -76,6 +88,22 @@ function App() {
               className="text-sm underline hover:no-underline"
             >
               Ir al Panel de Administración →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {userRole === 'employee' && currentView === 'home' && (
+        <div className="bg-mineral-green dark:bg-mineral-green-dark text-white py-2">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <span className="text-sm">
+              Panel de Empleado disponible
+            </span>
+            <button
+              onClick={() => setCurrentView('employee')}
+              className="text-sm underline hover:no-underline"
+            >
+              Ir al Panel de Empleado →
             </button>
           </div>
         </div>
